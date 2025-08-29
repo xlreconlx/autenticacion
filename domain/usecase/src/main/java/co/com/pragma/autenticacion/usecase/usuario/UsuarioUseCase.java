@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+
 @RequiredArgsConstructor
 public class UsuarioUseCase {
 
@@ -27,7 +28,7 @@ public class UsuarioUseCase {
         }
 
         if (!isValidEmail(usuario.getEmail())) {
-            return Mono.error(badRequest("Correo electrónico inválido"));
+            return Mono.error(badRequest("Correo electronico invalido"));
         }
 
         if (usuario.getSalarioBase() < 0 || usuario.getSalarioBase() > 15_000_000L) {
@@ -40,10 +41,10 @@ public class UsuarioUseCase {
         }
 
         return usuarioRepository.findByEmail(usuario.getEmail())
-                .flatMap(u -> Mono.<Usuario>error(badRequest("El correo ya está registrado")))
+                .flatMap(u -> Mono.<Usuario>error(badRequest("El correo ya esta registrado")))
                 .switchIfEmpty(usuarioRepository.save(usuario))
-                .doOnSuccess(saved -> logger.info("Usuario registrado id={}" + saved.getIdUsuario()))
-                .doOnError(e -> logger.log(Level.WARNING, "Error registrando usuario: {}" + e.getMessage()));
+                .doOnSuccess(saved -> logger.info("Usuario registrado id=" + saved.getIdUsuario()))
+                .doOnError(e -> logger.log(Level.WARNING, "Error registrando usuario: " + e.getMessage()));
     }
 
     public Flux<Usuario> listarUsuarios() {
@@ -54,6 +55,11 @@ public class UsuarioUseCase {
     public Mono<Usuario> obtenerUsuarioPorId(Integer id) {
         logger.info("Buscando Usuario por id: " +id);
         return usuarioRepository.findById(id);
+    }
+
+    public Mono<Usuario> obtenerUsuarioPorEmail(String email) {
+        logger.info("Buscando Usuario por email: " +email);
+        return usuarioRepository.findByEmail(email);
     }
 
     public Mono<Void> eliminarUsuario(Integer id) {

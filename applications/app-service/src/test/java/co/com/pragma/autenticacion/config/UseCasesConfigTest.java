@@ -1,6 +1,11 @@
 package co.com.pragma.autenticacion.config;
 
+import co.com.pragma.autenticacion.api.UsuarioHandler;
+import co.com.pragma.autenticacion.model.usuario.gateways.UsuarioRepository;
+import co.com.pragma.autenticacion.r2dbcmysql.repository.R2dbcUsuarioRepository;
+import co.com.pragma.autenticacion.usecase.usuario.UsuarioUseCase;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +39,23 @@ public class UseCasesConfigTest {
         public MyUseCase myUseCase() {
             return new MyUseCase();
         }
+
+        @Bean
+        public UsuarioUseCase usuarioUseCase() {
+            return Mockito.mock(UsuarioUseCase.class);
+        }
+
+        @Bean
+        public UsuarioHandler usuarioHandler() {
+            return Mockito.mock(UsuarioHandler.class);
+        }
+
+        @Bean
+        public UsuarioRepository usuarioRepository() {
+            return Mockito.mock(UsuarioRepository.class);
+        }
+
+
     }
 
     static class MyUseCase {

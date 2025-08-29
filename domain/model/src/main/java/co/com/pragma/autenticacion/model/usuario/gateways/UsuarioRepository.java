@@ -5,7 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface UsuarioRepository {
-    Mono<Usuario> save(Usuario user);
+    Mono<Usuario> save(Usuario usuario);
     Mono<Usuario> findById(Integer id);
     Mono<Usuario> findByEmail(String email);
     Flux<Usuario> findAll();
