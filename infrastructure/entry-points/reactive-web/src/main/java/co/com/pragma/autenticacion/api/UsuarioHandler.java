@@ -26,6 +26,7 @@ import java.util.Map;
 public class UsuarioHandler {
     private final UsuarioUseCase usuarioUseCase;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public Mono<ServerResponse> login(ServerRequest request) {
         return request.bodyToMono(LoginRequest.class)
@@ -33,7 +34,7 @@ public class UsuarioHandler {
                         usuarioUseCase.obtenerUsuarioPorEmail(loginRequest.getEmail())
                                 .filter(usuario -> passwordEncoder.matches(loginRequest.getPassword(), usuario.getPassword()))
                                 .map(usuario -> {
-                                    String token = JwtUtil.generateToken(
+                                    String token = jwtUtil.generateToken(
                                             usuario.getEmail(),
                                             usuario.getRol().getNombre()
                                     );

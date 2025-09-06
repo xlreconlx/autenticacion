@@ -1,6 +1,7 @@
 package co.com.pragma.autenticacion.api.config;
 
 import co.com.pragma.autenticacion.api.util.JwtUtil;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -10,7 +11,9 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 @Component
+@AllArgsConstructor
 public class JwtAuthenticationFilter implements WebFilter {
+    private final JwtUtil jwtUtil;
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
@@ -31,13 +34,13 @@ public class JwtAuthenticationFilter implements WebFilter {
 
         String token = authHeader.substring(7);
 
-        if (!JwtUtil.validateToken(token)) {
+        if (!jwtUtil.validateToken(token)) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        String email = JwtUtil.getEmailFromToken(token);
-        String rol = JwtUtil.getRoleFromToken(token);
+        String email = jwtUtil.getEmailFromToken(token);
+        String rol = jwtUtil.getRoleFromToken(token);
 
         exchange.getAttributes().put("email", email);
         exchange.getAttributes().put("rol", rol);

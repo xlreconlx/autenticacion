@@ -3,16 +3,20 @@ package co.com.pragma.autenticacion.api.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
     //private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private static final long EXPIRATION_TIME = 86400000; // 1 dia
-    private static final String SECRET_KEY = "RCexi9khS2ZYXhEDL6oM8kQZp421HwF8CxGXgGHvrrw=";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
 
-    public static String generateToken(String email, String rol) {
+    public String generateToken(String email, String rol) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("rol", rol)
@@ -22,7 +26,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public static boolean validateToken(String token) {
+    public  boolean validateToken(String token) {
         try {
             Jwts.parser().setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8)).parseClaimsJws(token);
             return true;
@@ -32,18 +36,18 @@ public class JwtUtil {
     }
 
 
-    public static Claims getClaims(String token) {
+    public Claims getClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    public static String getEmailFromToken(String token) {
+    public  String getEmailFromToken(String token) {
         return getClaims(token).getSubject();
     }
 
-    public static String getRoleFromToken(String token) {
+    public  String getRoleFromToken(String token) {
         return (String) getClaims(token).get("rol");
     }
 }

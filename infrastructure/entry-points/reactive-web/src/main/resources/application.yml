@@ -13,3 +13,6 @@ spring:
 logging:
   level:
     org.springframework.r2dbc: DEBUG
+
+jwt:
+  secret: RCexi9khS2ZYXhEDL6oM8kQZp421HwF8CxGXgGHvrrw=
