@@ -53,7 +53,8 @@ public class R2dbcUsuario {
                 this.salarioBase,
                 this.idRol,
                 this.password,
-                this.fechaNacimiento
+                this.fechaNacimiento,
+                null
         );
     }
 }

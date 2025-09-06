@@ -8,6 +8,5 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface R2dbcUsuarioRepository extends ReactiveCrudRepository<R2dbcUsuario, Integer> {
-
     Mono<R2dbcUsuario> findByEmail(String email);
 }

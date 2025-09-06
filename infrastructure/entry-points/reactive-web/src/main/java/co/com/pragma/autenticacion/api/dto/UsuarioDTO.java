@@ -1,22 +1,16 @@
-package co.com.pragma.autenticacion.model.usuario;
+package co.com.pragma.autenticacion.api.dto;
+
 import co.com.pragma.autenticacion.model.rol.Rol;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
-@Data
-public class Usuario {
+public class UsuarioDTO {
     private Integer idUsuario;
     private String nombre;
     private String apellido;
@@ -24,8 +18,6 @@ public class Usuario {
     private String documentoIdentidad;
     private String telefono;
     private Long salarioBase;
-    private Integer idRol;
-    private String password;
     private LocalDate fechaNacimiento;
-    private Rol rol;
+    private String rol;
 }

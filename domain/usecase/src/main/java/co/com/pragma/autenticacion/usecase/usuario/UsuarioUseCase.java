@@ -2,6 +2,7 @@ package co.com.pragma.autenticacion.usecase.usuario;
 
 import co.com.pragma.autenticacion.model.usuario.Usuario;
 import co.com.pragma.autenticacion.model.usuario.gateways.UsuarioRepository;
+import co.com.pragma.autenticacion.usecase.rol.RolUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,6 +18,7 @@ public class UsuarioUseCase {
 
     private final UsuarioRepository usuarioRepository;
     private static final Logger logger = Logger.getLogger(UsuarioUseCase.class.getName());
+    private final RolUseCase rolUseCase;
 
     public Mono<Usuario> registrarUsuario(Usuario usuario) {
 
@@ -42,24 +44,54 @@ public class UsuarioUseCase {
 
         return usuarioRepository.findByEmail(usuario.getEmail())
                 .flatMap(u -> Mono.<Usuario>error(badRequest("El correo ya esta registrado")))
-                .switchIfEmpty(usuarioRepository.save(usuario))
+                .switchIfEmpty(usuarioRepository.save(usuario)
+                        .flatMap(saved ->
+                                rolUseCase.getRolById(saved.getIdRol())
+                                        .map(rol -> {
+                                            saved.setRol(rol);
+                                            return saved;
+                                        })
+                        ))
                 .doOnSuccess(saved -> logger.info("Usuario registrado id=" + saved.getIdUsuario()))
                 .doOnError(e -> logger.log(Level.WARNING, "Error registrando usuario: " + e.getMessage()));
     }
 
     public Flux<Usuario> listarUsuarios() {
         logger.info("Listando Usuarios");
-        return usuarioRepository.findAll();
+        return usuarioRepository.findAll()
+                .flatMap(usuario ->
+                        rolUseCase.getRolById(usuario.getIdRol())
+                                .map(rol -> {
+                                    usuario.setRol(rol);
+                                    return usuario;
+                                })
+                );
     }
 
     public Mono<Usuario> obtenerUsuarioPorId(Integer id) {
         logger.info("Buscando Usuario por id: " +id);
-        return usuarioRepository.findById(id);
+        return usuarioRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Usuario no encontrado")))
+                .flatMap(usuario ->
+                        rolUseCase.getRolById(usuario.getIdRol())
+                                .map(rol -> {
+                                    usuario.setRol(rol);
+                                    return usuario;
+                                })
+                );
     }
 
     public Mono<Usuario> obtenerUsuarioPorEmail(String email) {
         logger.info("Buscando Usuario por email: " +email);
-        return usuarioRepository.findByEmail(email);
+        return usuarioRepository.findByEmail(email)
+                .switchIfEmpty(Mono.error(new RuntimeException("Usuario no encontrado")))
+                .flatMap(usuario ->
+                        rolUseCase.getRolById(usuario.getIdRol())
+                                .map(rol -> {
+                                    usuario.setRol(rol);
+                                    return usuario;
+                                })
+                );
     }
 
     public Mono<Void> eliminarUsuario(Integer id) {

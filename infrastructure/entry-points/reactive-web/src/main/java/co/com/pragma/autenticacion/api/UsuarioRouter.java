@@ -132,8 +132,10 @@ public class UsuarioRouter {
     })
     public RouterFunction<ServerResponse> routerFunction(UsuarioHandler handler) {
         return route(POST("/api/v1/usuarios"), handler::registrarUsuario)
+                .andRoute(POST("/api/v1/login"), handler::login)
                 .andRoute(GET("/api/v1/usuarios"), handler::listarUsuarios)
-                .andRoute(GET("/api/v1/usuarios/exist"), handler::obtenerUsuarioPorEmail)
+                .andRoute(GET("/api/v1/usuarios/exist"), handler::existeUsuarioPorEmail)
+                .andRoute(GET("/api/v1/usuarios/search-by-email"), handler::usuarioPorEmail)
                 .andRoute(DELETE("/api/v1/usuarios/eliminar/{id}"), handler::eliminarUsuario);
     }
 }
