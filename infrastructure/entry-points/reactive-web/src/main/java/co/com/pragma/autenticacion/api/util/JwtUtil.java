@@ -13,8 +13,11 @@ import java.util.Date;
 public class JwtUtil {
     //private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private static final long EXPIRATION_TIME = 86400000; // 1 dia
-    @Value("${jwt.secret}")
-    private String SECRET_KEY;
+    private final String SECRET_KEY;
+
+    public JwtUtil(@Value("${jwt.secret}") String SECRET_KEY){
+        this.SECRET_KEY = SECRET_KEY;
+    }
 
     public String generateToken(String email, String rol) {
         return Jwts.builder()

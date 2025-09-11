@@ -19,20 +19,26 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 @EnableR2dbcAuditing
 public class ApplicationConfiguration extends AbstractR2dbcConfiguration {
 
-    @Value("${spring.r2dbc.host}")
-    private String host;
+    private final String host;
+    private final int port;
+    private final String database;
+    private final String username;
+    private final String password;
 
-    @Value("${spring.r2dbc.port}")
-    private Integer port;
-
-    @Value("${spring.r2dbc.password}")
-    private String password;
-
-    @Value("${spring.r2dbc.db}")
-    private String database;
-
-    @Value("${spring.r2dbc.username}")
-    private String username;
+    // Constructor con @Value
+    public ApplicationConfiguration(
+            @Value("${spring.r2dbc.host}") String host,
+            @Value("${spring.r2dbc.port}") int port,
+            @Value("${spring.r2dbc.database}") String database,
+            @Value("${spring.r2dbc.username}") String username,
+            @Value("${spring.r2dbc.password}") String password
+    ) {
+        this.host = host;
+        this.port = port;
+        this.database = database;
+        this.username = username;
+        this.password = password;
+    }
 
     @Override
     public ConnectionFactory connectionFactory() {

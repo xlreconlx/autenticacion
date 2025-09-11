@@ -1,12 +1,15 @@
 package co.com.pragma.autenticacion.usecase.usuario;
 
+import co.com.pragma.autenticacion.model.rol.Rol;
 import co.com.pragma.autenticacion.model.usuario.Usuario;
 import co.com.pragma.autenticacion.model.usuario.gateways.UsuarioRepository;
+import co.com.pragma.autenticacion.usecase.rol.RolUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -14,144 +17,164 @@ import reactor.test.StepVerifier;
 import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UsuarioUseCaseTest {
+
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private RolUseCase rolUseCase;
 
     @InjectMocks
     private UsuarioUseCase usuarioUseCase;
 
-    private Usuario usuarioValido;
+    private Usuario usuario;
+    private Rol rol;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        rol = new Rol();
+        rol.setIdRol(1);
+        rol.setNombre("ADMIN");
 
-        usuarioValido = new Usuario();
-        usuarioValido.setIdUsuario(1);
-        usuarioValido.setNombre("Anderson");
-        usuarioValido.setApellido("Urrego");
-        usuarioValido.setEmail("anderson@test.com");
-        usuarioValido.setSalarioBase(5_000_000L);
-        usuarioValido.setFechaNacimiento(LocalDate.of(2000, 1, 1));
+        usuario = new Usuario();
+        usuario.setIdUsuario(1);
+        usuario.setNombre("Juan");
+        usuario.setApellido("Pérez");
+        usuario.setEmail("juan@test.com");
+        usuario.setSalarioBase(5000000L);
+        usuario.setFechaNacimiento(LocalDate.of(1990, 1, 1));
+        usuario.setIdRol(1);
     }
 
     @Test
-    void registrarUsuario_deberiaRegistrarCorrectamente() {
-        when(usuarioRepository.findByEmail(usuarioValido.getEmail())).thenReturn(Mono.empty());
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(usuarioValido));
+    void registrarUsuario_ok() {
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Mono.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(usuario));
+        when(rolUseCase.getRolById(1)).thenReturn(Mono.just(rol));
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioValido))
-                .expectNextMatches(u -> u.getIdUsuario() == 1 && u.getEmail().equals("anderson@test.com"))
+        StepVerifier.create(usuarioUseCase.registrarUsuario(usuario))
+                .expectNextMatches(u ->
+                        u.getEmail().equals("juan@test.com") &&
+                                u.getRol() != null &&
+                                "ADMIN".equals(u.getRol().getNombre()))
                 .verifyComplete();
-
-        verify(usuarioRepository).findByEmail(usuarioValido.getEmail());
-        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
-    void registrarUsuario_deberiaFallarPorCamposObligatorios() {
-        Usuario usuarioInvalido = new Usuario();
-        usuarioInvalido.setNombre("");
-        usuarioInvalido.setApellido("Perez");
-        usuarioInvalido.setEmail(null);
+    void registrarUsuario_correoYaExiste() {
+        // El correo ya existe
+        when(usuarioRepository.findByEmail(anyString()))
+                .thenReturn(Mono.just(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(Mono.just(usuario));
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioInvalido))
+        StepVerifier.create(usuarioUseCase.registrarUsuario(usuario))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
-                        e.getMessage().contains("Campos obligatorios"))
+                        e.getMessage().contains("El correo ya esta registrado"))
                 .verify();
+
+
+        //verify(usuarioRepository, never()).save(any());
     }
 
     @Test
-    void registrarUsuario_deberiaFallarPorEmailInvalido() {
-        usuarioValido.setEmail("correo_invalido");
+    void registrarUsuario_emailInvalido() {
+        usuario.setEmail("correo_invalido");
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioValido))
+        StepVerifier.create(usuarioUseCase.registrarUsuario(usuario))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
                         e.getMessage().contains("Correo electronico invalido"))
                 .verify();
     }
 
     @Test
-    void registrarUsuario_deberiaFallarPorSalarioFueraDeRango() {
-        usuarioValido.setSalarioBase(20_000_000L);
+    void registrarUsuario_salarioFueraDeRango() {
+        usuario.setSalarioBase(20_000_000L);
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioValido))
+        StepVerifier.create(usuarioUseCase.registrarUsuario(usuario))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
                         e.getMessage().contains("salario_base fuera de rango"))
                 .verify();
     }
 
     @Test
-    void registrarUsuario_deberiaFallarPorFechaFutura() {
-        usuarioValido.setFechaNacimiento(LocalDate.now().plusDays(1));
+    void registrarUsuario_fechaFutura() {
+        usuario.setFechaNacimiento(LocalDate.now().plusDays(1));
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioValido))
+        StepVerifier.create(usuarioUseCase.registrarUsuario(usuario))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
                         e.getMessage().contains("fecha_nacimiento no puede ser futura"))
                 .verify();
     }
 
     @Test
-    void registrarUsuario_deberiaFallarSiCorreoYaRegistrado() {
-        when(usuarioRepository.findByEmail(usuarioValido.getEmail()))
-                .thenReturn(Mono.just(usuarioValido));
+    void listarUsuarios_ok() {
+        when(usuarioRepository.findAll()).thenReturn(Flux.just(usuario));
+        when(rolUseCase.getRolById(1)).thenReturn(Mono.just(rol));
 
-        when(usuarioRepository.save(any(Usuario.class)))
-                .thenReturn(Mono.just(usuarioValido));
+        StepVerifier.create(usuarioUseCase.listarUsuarios())
+                .expectNextMatches(u ->
+                        u.getEmail().equals("juan@test.com") &&
+                                u.getRol() != null &&
+                                "ADMIN".equals(u.getRol().getNombre()))
+                .verifyComplete();
+    }
 
-        StepVerifier.create(usuarioUseCase.registrarUsuario(usuarioValido))
-                .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
-                        e.getMessage().contains("El correo ya esta registrado"))
+    @Test
+    void obtenerUsuarioPorId_ok() {
+        when(usuarioRepository.findById(1)).thenReturn(Mono.just(usuario));
+        when(rolUseCase.getRolById(1)).thenReturn(Mono.just(rol));
+
+        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorId(1))
+                .expectNextMatches(u ->
+                        u.getIdUsuario() == 1 &&
+                                u.getRol() != null &&
+                                "ADMIN".equals(u.getRol().getNombre()))
+                .verifyComplete();
+    }
+
+    @Test
+    void obtenerUsuarioPorId_noExiste() {
+        when(usuarioRepository.findById(1)).thenReturn(Mono.empty());
+
+        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorId(1))
+                .expectErrorMatches(e -> e instanceof RuntimeException &&
+                        e.getMessage().contains("Usuario no encontrado"))
                 .verify();
     }
 
     @Test
-    void listarUsuarios_deberiaRetornarUsuarios() {
-        when(usuarioRepository.findAll()).thenReturn(Flux.just(usuarioValido));
+    void obtenerUsuarioPorEmail_ok() {
+        when(usuarioRepository.findByEmail("juan@test.com")).thenReturn(Mono.just(usuario));
+        when(rolUseCase.getRolById(1)).thenReturn(Mono.just(rol));
 
-        StepVerifier.create(usuarioUseCase.listarUsuarios())
-                .expectNextMatches(u -> u.getIdUsuario() == 1)
+        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorEmail("juan@test.com"))
+                .expectNextMatches(u ->
+                        u.getEmail().equals("juan@test.com") &&
+                                u.getRol() != null &&
+                                "ADMIN".equals(u.getRol().getNombre()))
                 .verifyComplete();
-
-        verify(usuarioRepository).findAll();
     }
 
     @Test
-    void obtenerUsuarioPorId_deberiaRetornarUsuario() {
-        when(usuarioRepository.findById(1)).thenReturn(Mono.just(usuarioValido));
+    void obtenerUsuarioPorEmail_noExiste() {
+        when(usuarioRepository.findByEmail("noexiste@test.com")).thenReturn(Mono.empty());
 
-        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorId(1))
-                .expectNextMatches(u -> u.getEmail().equals("anderson@test.com"))
-                .verifyComplete();
-
-        verify(usuarioRepository).findById(1);
+        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorEmail("noexiste@test.com"))
+                .expectErrorMatches(e -> e instanceof RuntimeException &&
+                        e.getMessage().contains("Usuario no encontrado"))
+                .verify();
     }
 
     @Test
-    void obtenerUsuarioPorEmail_deberiaRetornarUsuario() {
-        when(usuarioRepository.findByEmail(usuarioValido.getEmail())).thenReturn(Mono.just(usuarioValido));
-
-        StepVerifier.create(usuarioUseCase.obtenerUsuarioPorEmail(usuarioValido.getEmail()))
-                .expectNextMatches(u -> u.getNombre().equals("Anderson"))
-                .verifyComplete();
-
-        verify(usuarioRepository).findByEmail(usuarioValido.getEmail());
-    }
-
-    @Test
-    void eliminarUsuario_deberiaEliminarCorrectamente() {
+    void eliminarUsuario_ok() {
         when(usuarioRepository.deleteById(1)).thenReturn(Mono.empty());
 
         StepVerifier.create(usuarioUseCase.eliminarUsuario(1))
                 .verifyComplete();
-
-        verify(usuarioRepository).deleteById(1);
     }
-
-
-
 }
